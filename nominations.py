@@ -33,7 +33,7 @@ def export_yearly_nom_count_for_each_nominee(outputFile):
     for nominee in handler.get_all():
         line = ""
         line += nominee['id']+","
-        line += nominee['name']+","
+        line += "\""+nominee['name']+"\","
         first_ch_win = get_first_ch_win(nominee['nobel'])
         if first_ch_win is not None:
             line += str(first_ch_win)
@@ -43,6 +43,46 @@ def export_yearly_nom_count_for_each_nominee(outputFile):
             count = collection.count_documents({"year": str(year),
                                                 "nominee_id": nominee['id']})
             line += ","+str(count)
+        file.write(line+"\n")
+    file.close()
+
+
+def export_yearly_nominators_count(outputFile):
+    collection = MongoClient().nobel['nominations']
+    handler = MongoHandler("people")
+    file = open(outputFile, mode="w", errors="replace")
+    header = "nominee_id,nominee_name,year_NP"
+    for year in range(1901, 1972):
+        header += ","+str(year)
+    file.write(header+"\n")
+
+    for nominee in handler.get_all():
+        line = ""
+        line += nominee['id']+","
+        line += "\""+nominee['name']+"\","
+        first_ch_win = get_first_ch_win(nominee['nobel'])
+        if first_ch_win is not None:
+            line += str(first_ch_win)
+        else:
+            line += "None"
+        for year in range(1901, 1972):
+            # equivalent to select distinct(nominator_id),nominee_id,
+            # nominee_name from nominations.csv
+            # where nominee_id=<id> and year=<year>
+            count = list(collection.aggregate([
+                        {
+                            '$match': {
+                                'year': str(year),
+                                'nominee_id': nominee['id']
+                            }
+                        }, {
+                            '$group': {
+                                '_id': '$nominator_id'
+                            }
+                        }, {
+                            '$count': 'n'
+                        }]))
+            line += ","+str(0 if not count else count[0]['n'])
         file.write(line+"\n")
     file.close()
 
