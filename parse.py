@@ -5,6 +5,7 @@ import glob
 import sys
 from models import Person
 from mongoHandler import MongoHandler
+
 import html
 properties = [
     "Gender", "Birth", "Death", "Profession", "University", "City", "State",
@@ -196,12 +197,30 @@ def clean_names(handler):
         handler.update_person(person)
 
 
+def export_nominations_to_csv(handler, csvFileName):
+    file = open(csvFileName, mode="w", errors="replace")
+    file.write("nominee_id,nominee_name,nominator_id,nominator_name,year,type\n")
+    for person in handler.get_all():
+        person_id = person['id']
+        for nominator_id, nominations in person['nominations'].items():
+            for nomination in nominations:
+                file.write(person_id+",")
+                file.write("\""+person['name']+"\",")
+                file.write(nominator_id+",")
+                nominator = handler.get_person_by_id(nominator_id)
+                file.write("\""+nominator['name']+"\",")
+                file.write(nomination['year']+",")
+                file.write(nomination['type']+"\n")
+    file.close()
+
+
 def main(argument):
     handler = MongoHandler("people")
     for file in glob.glob(argument + "**/*.html"):
         parse_html_file(file, handler)
     clean_names(handler)
     insert_missing_nominations()
+    export_nominations_to_csv()
 
 
 def parse_html_file(file, handler):
