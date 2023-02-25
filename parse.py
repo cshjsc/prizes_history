@@ -220,7 +220,7 @@ def main(argument):
         parse_html_file(file, handler)
     clean_names(handler)
     insert_missing_nominations()
-    export_nominations_to_csv()
+    #export_nominations_to_csv(handler,"nominations.csv")
 
 
 def parse_html_file(file, handler):
