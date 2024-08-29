@@ -1,0 +1,48 @@
+gawk 'BEGIN {
+FS = "\t" # Set field separator as tab
+}
+
+{
+count = 0 # Initialize count of non-zero integer fields
+ 
+# Loop through each field
+for (i = 1; i <= NF; i++) {
+# Check if the field is an integer different from 0
+if ($i ~ /^[[:digit:]]+$/ && $i != 0) {
+count++
+}
+}
+ 
+# If the count of non-zero integer fields is 2 or more, print the line
+if (count >= 2) {
+print
+}
+}' trajectories_nw.csv > trajectories_nw_more_two_year_nomination.csv
+
+The file trajectories_nw_more_two_year_nomination.csv contains the 245 nominees with more than two years of nomination.
+To explore the behaviour of the last two year of nomination we did
+awk -F'\t' '{
+printf "%s\t", $1;
+for (i = 2; i <= NF; i++) {
+if ($i ~ /^[0-9]+$/) {
+diff = $i - prev;
+printf "%d\t", diff;
+prev = $i;
+}
+}
+printf "\n";
+}' trajectories_nw_more_two_year_nomination.csv > differences_adjacent_years_trajectories_nw_more_two_year_nomination.csv
+
+To detect those non-winners with surges, drops or constant nominations in the last year of nomination
+gawk -F'\t' '{
+for (i = NF; i > 0; i--) {
+if ($i ~ /^[-+]?[0-9]+(\.[0-9]+)?$/) {
+print $1 "\t" $i;
+break;
+}
+}
+}' differences_adjacent_years_trajectories_nw_more_two_year_nomination.csv > last_diff_trajectories_nw_more_two_year_nomination.csv
+
+And we counted the number of lines positive (surge), negative (drop) and zero (stable)
+
+gawk -F'\t' '{ if ($2 > 0) positive++; else if ($2 == 0) zero++; else negative++ } END { print "Positive:", positive, "Zero:", zero, "Negative:", negative }' last_diff_trajectories_nw_more_two_year_nomination.csv
